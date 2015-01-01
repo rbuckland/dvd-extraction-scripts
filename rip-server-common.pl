@@ -1,16 +1,21 @@
 #!/usr/bin/perl
 
 
-$|=1;
+#  $|=1;
 
-use strict;
+# use strict;
 use Switch;
 use DVD::Read::Title;
 use Fcntl qw(O_RDONLY O_NONBLOCK); 
 require "sys/ioctl.ph";
 
-my $title = DVD::Read::Title->new('/dev/sr0', 1);
-print $title->video_format_txt . "\n";
+#my $title = DVD::Read::Title->new('/dev/sr0', 2);
+#print $title->volid . "\n";
+
+my $drive = $1;
+my $outputDir = $3;
+
+my $MAKEMKVEXTRACTOR="/opt/dvd-extraction-scripts/makemkv-extractor.sh"
 
 
 use constant {
@@ -21,28 +26,18 @@ use constant {
   CDS_DISC_OK => 4
 };
 
-driveStatus("/dev/sr0");
-getDvdTitle("/dev/sr0");
+if (driveStatus("/dev/sr0") == "OK") {
+  my $title = getDvdTitle("/dev/sr0");
+  system($MAKEMKVEXTRACTOR, $drive, $outputDir, $title);
+}
 
 
 #
-# Using the Table of Contents ioctl functions, we will read the name of the dvd
-# to use as the name of the file (not the best name, but hopefully recognisable for a rename manually later by the user)
+# Using volname
 #
 sub getDvdTitle {
   my $device = @_[0];
-  print "Reading title from [".$device."]\n";
-  my $tochdr=chr(0) x 16;
-
-  my $CDROM_READ_TOCHDR=0x5305;
-  sysopen(_DEV, $device, O_RDONLY | O_NONBLOCK) ;
-  my $retval = ioctl(_DEV, $CDROM_READ_TOCHDR,$tochdr) || -1;
-  my ($start,$end)=unpack "CC",$tochdr;
-  print $retval . "\n";
-  print $tochdr . "\n";
-  print $start . "\n";
-  print $end . "\n";
-   
+  my movieTitle = system('volname '. $device);
 }
 
 #
@@ -57,17 +52,17 @@ sub driveStatus {
 
   sysopen(_DEV, $device, O_RDONLY | O_NONBLOCK) ;
   my $retval = ioctl(_DEV, $CDROM_DRIVE_STATUS,0) || -1;
+  my $response = "NOTREADY";
   switch($retval) {
-    case (CDS_NO_INFO) { print "CDS_NO_INFO" }
-    case (CDS_NO_DISC) { print "CDS_NO_DISC"; }
-    case (CDS_TRAY_OPEN) { print "CDS_TRAY_OPEN"; }
-    case (CDS_DRIVE_NOT_READY) { print "CDS_DRIVE_NOT_READY"; }
-    case (CDS_DISC_OK) { print "CDS_DISC_OK"; }
-    else { die "error" }
+    case (CDS_NO_INFO) {}; # { print "CDS_NO_INFO" }
+    case (CDS_NO_DISC) {}; # { print "CDS_NO_DISC"; }
+    case (CDS_TRAY_OPEN) {}; # { print "CDS_TRAY_OPEN"; }
+    case (CDS_DRIVE_NOT_READY) {}; # { print "CDS_DRIVE_NOT_READY"; }
+    case (CDS_DISC_OK) { $response = "OK"; }
+    else {}; # { die "error" }
   }
-  print "\n";
-
   close _DEV;
+  return $response;
 
 }
 

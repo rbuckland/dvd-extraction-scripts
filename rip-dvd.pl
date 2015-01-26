@@ -1,22 +1,15 @@
 #!/usr/bin/perl
 
-
-#  $|=1;
+$|=1;
 
 # use strict;
 use Switch;
-use DVD::Read::Title;
 use Fcntl qw(O_RDONLY O_NONBLOCK); 
 require "sys/ioctl.ph";
 
-#my $title = DVD::Read::Title->new('/dev/sr0', 2);
-#print $title->volid . "\n";
+my ($drive, $outputDir) = @ARGV;
 
-my $drive = $1;
-my $outputDir = $3;
-
-my $MAKEMKVEXTRACTOR="/opt/dvd-extraction-scripts/makemkv-extractor.sh"
-
+my $MAKEMKVEXTRACTOR="/opt/dvd-extraction-scripts/makemkv-extractor.sh";
 
 use constant {
   CDS_NO_INFO => 0,
@@ -26,9 +19,19 @@ use constant {
   CDS_DISC_OK => 4
 };
 
-if (driveStatus("/dev/sr0") == "OK") {
+if ( -f "/var/run/rip-dvd.pid" ) {
+ exit 0;
+}
+
+my $driveStatus = driveStatus("/dev/sr0");
+if ($driveStatus eq "OK") {
+  system("echo $$ > /var/run/rip-dvd.pid");
   my $title = getDvdTitle("/dev/sr0");
-  system($MAKEMKVEXTRACTOR, $drive, $outputDir, $title);
+  my @cmd = ($MAKEMKVEXTRACTOR, $drive, $outputDir, $title);
+  print "//running [".join(' ',@cmd)."]\n";
+  system(@cmd);
+  system(('eject',$drive));
+  unlink('/var/run/rip-dvd.pid');
 }
 
 
@@ -37,7 +40,10 @@ if (driveStatus("/dev/sr0") == "OK") {
 #
 sub getDvdTitle {
   my $device = @_[0];
-  my movieTitle = system('volname '. $device);
+  my $cmd = 'volname '. $device;
+  my $title = `$cmd`;
+  chomp($title);
+  return $title;
 }
 
 #
@@ -46,7 +52,7 @@ sub getDvdTitle {
 # 
 sub driveStatus {
   my $device = @_[0];
-  print "Checking drive status of [".$device."]\n";
+#  print "Checking drive status of [".$device."]\n";
 
   my $CDROM_DRIVE_STATUS=0x5326;
 

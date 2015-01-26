@@ -22,12 +22,20 @@
 use Getopt::Std;
 
 $|=1;
-$HANDBRAKE="/opt/bin/HandBrakeCLI";
+$HANDBRAKECLI="/usr/bin/HandBrakeCLI";
 
-  getopts('s:d:', \%opts);  # options as above. Values in %opts
+  getopts('mvs:d:', \%opts);  # options as above. Values in %opts
 
   $sourceDir = $opts{'s'};
   $destDir = $opts{'d'};
+  $mkvonly = $opts{'m'};
+  $vidtsonly = $opts{'v'};
+
+&log("Source folder is: " . $sourceDir);
+&log("Destination folder is: " . $sourceDir);
+&log("MKV ONLY is set") if $mkvonly;
+&log("VIDEO_TS ONLY is set") if $vidtsonly;
+
 
 
 while (1)  {
@@ -36,11 +44,16 @@ while (1)  {
   while (defined(my $name = readdir $dh1)) {
     next unless -d "$sourceDir/$name";
     next if $name =~ /^\.\.?+$/;
-    next unless 
 
     # we have one directory of a DVD Dump ..  or an MKV
     $fullpathSource = "$sourceDir/$name";
-    next unless (`find '$fullpathSource' -name '*.mkv'` or (-d "$fullpathSource/VIDEO_TS"));
+
+    $haveMkv = (`find "$fullpathSource" -name '*.mkv'`);
+    $haveVideoTS = (-d "$fullpathSource/VIDEO_TS");
+
+    next if ($mkvonly and $haveVideoTS);
+    next if ($vidtsonly and $haveMkv);
+    next if (! $haveMkv  and ! $haveVideoTS);
 
     
     # if there is a COMPLETE file then we will skip the dir
@@ -82,12 +95,21 @@ while (1)  {
 
       next unless `find '$fullpathSource' -name '*.mkv'`;
 
+      # we will name the m4v from the dir .. if there i more than 1 mkv .. the subsequnet ones
+      # will ha=ve _2 etc
       &log("Checking as a MAKEMKV dir");
       opendir my $dh2, $fullpathSource, or die "$0: opendir: $!";
       system("touch '$fullpathSource/PROCESSING'");
+      $count = 1;
       while (defined(my $mkvname = readdir $dh2)) {
          next unless -f "$fullpathSource/$mkvname" && $mkvname =~ /\.mkv$/;
-         &ripTitle($fullpathSource.'/'.$mkvname,$sourceDir.'/'.$name.'_'.$mkvname.'.m4v');
+         if ($count > 1) {
+           $filename = $name.'_'.$count.'.m4v';
+         } else {
+           $filename = $name.'.m4v';
+         }
+         &ripTitle($fullpathSource.'/'.$mkvname,$sourceDir.'/'.$filename);
+         $count = $count + 1;
       }
       unlink("$fullpathSource/PROCESSING");
       system("touch '$fullpathSource/COMPLETE'");
@@ -102,7 +124,7 @@ while (1)  {
 
 sub log { 
  $message = shift;
- $time = time();
+ $time = localtime();
  print $time . " :: " . $message . "\n";
 }
 
@@ -110,7 +132,7 @@ sub log {
 sub ripTitle {
    $source = shift;
    $dest = shift;
-   print "$HANDBRAKECLI -i '$source' -o '$dest' --preset=\"High Profile\"";
+   &log( "$HANDBRAKECLI -i '$source' -o '$dest' --preset=\"High Profile\"");
    system("$HANDBRAKECLI -i '$source' -o '$dest' --preset=\"High Profile\"");
 }
 

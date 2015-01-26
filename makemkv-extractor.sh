@@ -15,6 +15,7 @@ titleName=$3
 # This is for Linux installations - follow http://www.makemkv.com/forum2/viewtopic.php?f=3&t=224 for compilation
 MAKEMKVCON="/usr/bin/makemkvcon"
 
+echo ":: Scanning ${dvdDevice} for the primary title of ${titleName}, saving to ${savePath}"
 echo ":: Locating the longest title"
 # this line runs makemkv on info which identifies all the titles (stripping our Copy Protected ones etc)
 # perl then gets the times from the makemkvcon output of each identified title and then calculates the time

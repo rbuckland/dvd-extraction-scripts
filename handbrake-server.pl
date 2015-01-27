@@ -32,7 +32,7 @@ $HANDBRAKECLI="/usr/bin/HandBrakeCLI";
   $vidtsonly = $opts{'v'};
 
 &log("Source folder is: " . $sourceDir);
-&log("Destination folder is: " . $sourceDir);
+&log("Destination folder is: " . $destDir);
 &log("MKV ONLY is set") if $mkvonly;
 &log("VIDEO_TS ONLY is set") if $vidtsonly;
 
@@ -87,7 +87,7 @@ while (1)  {
 
        &log("RAW DVD Dump");
        system("touch '$fullpathSource/PROCESSING'");
-       &ripTitle($fullpathSource,$sourceDir.'/'.$name.'.m4v');
+       &ripTitle($fullpathSource,$destDir.'/'.$name.'.m4v');
        system("touch '$fullpathSource/COMPLETE'");
        unlink("$fullpathSource/PROCESSING");
 
@@ -108,7 +108,7 @@ while (1)  {
          } else {
            $filename = $name.'.m4v';
          }
-         &ripTitle($fullpathSource.'/'.$mkvname,$sourceDir.'/'.$filename);
+         &ripTitle($fullpathSource.'/'.$mkvname,$destDir.'/'.$filename);
          $count = $count + 1;
       }
       unlink("$fullpathSource/PROCESSING");

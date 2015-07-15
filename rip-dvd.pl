@@ -46,8 +46,9 @@ sub getDvdTitle {
   my $title = `$cmd`;
   chomp($title);
   $title =~ s/[^a-zA-Z0-9 _-]//g;
-  $title = map  {ucfirst(lc)," "} split(/[\s_-]+/,$title)
-  $title =~ s/^\s+|\s+$//g
+  my $f = join ('',map {ucfirst(lc)," "} split(/[\s_-]+/,$title));
+  $title = $f;
+  $title =~ s/^\s+|\s+$//g;
   return $title;
 } 
 

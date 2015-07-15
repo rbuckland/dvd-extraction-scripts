@@ -37,14 +37,19 @@ if ($driveStatus eq "OK") {
 
 #
 # Using volname
+# Sometimes the Volname returns an unhelpful name like D004992 .. so watch which disc
+# creates which title .. and rename when this extract is completed
 #
 sub getDvdTitle {
   my $device = @_[0];
   my $cmd = 'volname '. $device;
   my $title = `$cmd`;
   chomp($title);
+  $title =~ s/[^a-zA-Z0-9 _-]//g;
+  $title = map  {ucfirst(lc)," "} split(/[\s_-]+/,$title)
+  $title =~ s/^\s+|\s+$//g
   return $title;
-}
+} 
 
 #
 #  A function which takes one argument, the unix device filename of the DVD drive.

@@ -48,7 +48,7 @@ while (1)  {
     # we have one directory of a DVD Dump ..  or an MKV
     $fullpathSource = "$sourceDir/$name";
 
-    $haveMkv = (`find "$fullpathSource" -name '*.mkv'`);
+    $haveMkv = (`find "$fullpathSource" -name '*.mkv' -or -name '*.mov'`);
     $haveVideoTS = (-d "$fullpathSource/VIDEO_TS");
 
     next if ($mkvonly and $haveVideoTS);
@@ -93,7 +93,7 @@ while (1)  {
 
     } else {
 
-      next unless `find '$fullpathSource' -name '*.mkv'`;
+      next unless `find '$fullpathSource' -name '*.mkv' -or -name '*.mov'`;
 
       # we will name the m4v from the dir .. if there i more than 1 mkv .. the subsequnet ones
       # will ha=ve _2 etc
@@ -102,7 +102,7 @@ while (1)  {
       system("touch '$fullpathSource/PROCESSING'");
       $count = 1;
       while (defined(my $mkvname = readdir $dh2)) {
-         next unless -f "$fullpathSource/$mkvname" && $mkvname =~ /\.mkv$/;
+         next unless -f "$fullpathSource/$mkvname" && $mkvname =~ /\.(mkv|mov)$/;
          if ($count > 1) {
            $filename = $name.'_'.$count.'.m4v';
          } else {
@@ -140,6 +140,8 @@ sub ripTitle {
 sub HELP_MESSAGE() { 
 
 print <<EOHELP
+ -v VIDEO_TS folders only (best to run these through MAKEMKV b4)
+ -m *.mkv and *.mov only
  -s source_folder
  -o output_folder
 EOHELP
